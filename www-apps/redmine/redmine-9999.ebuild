@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/www-apps/redmine/redmine-2.4.6.ebuild,v 1.2 2014/08/06 00:06:01 mrueg Exp $
 
 EAPI=5
-USE_RUBY="ruby19 ruby20"
+USE_RUBY="ruby19 ruby20 ruby22"
 inherit eutils depend.apache git-r3 ruby-ng user
 
 DESCRIPTION="Redmine is a flexible project management web application written using Ruby on Rails framework"
@@ -24,7 +24,7 @@ IUSE="ldap imagemagick fastcgi passenger"
 
 ruby_add_rdepend "virtual/ruby-ssl
 	virtual/rubygems
-	>=dev-ruby/rails-3.2.19:3.2
+	>=dev-ruby/rails-4.2.0:4.2
 	>=dev-ruby/jquery-rails-2.0.2
 	dev-ruby/i18n:0.6
 	>=dev-ruby/coderay-1.0.9
