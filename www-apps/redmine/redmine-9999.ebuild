@@ -55,6 +55,7 @@ REDMINE_DIR="/var/lib/${PN}"
 pkg_setup() {
 	enewgroup redmine
 	enewuser redmine -1 -1 "${REDMINE_DIR}" redmine
+	ruby-ng_pkg_setup
 }
 
 all_ruby_unpack() {
