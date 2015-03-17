@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/www-apps/redmine/redmine-2.4.6.ebuild,v 1.2 2014/08/06 00:06:01 mrueg Exp $
 
 EAPI=5
-USE_RUBY="ruby19 ruby20 ruby22"
+USE_RUBY="ruby19 ruby20 ruby21"
 inherit eutils depend.apache git-r3 ruby-ng user
 
 DESCRIPTION="Redmine is a flexible project management web application written using Ruby on Rails framework"
@@ -157,7 +157,6 @@ pkg_config() {
 		eerror "Please update it via `eselect ruby`"
 		die
 	fi
-	einfo $RUBY_TARGETS
 	if [[ $RUBY_TARGETS != *$( eselect ruby show | awk 'NR==2' | tr  -d ' '  )* ]]; then
 		eerror "/usr/bin/ruby is currently not included in redmine's ruby targets: ${RUBY_TARGETS}."
 		eerror "Please update it via `eselect ruby`"
