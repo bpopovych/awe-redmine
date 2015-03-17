@@ -57,8 +57,11 @@ pkg_setup() {
 	enewuser redmine -1 -1 "${REDMINE_DIR}" redmine
 }
 
+all_ruby_unpack() {
+	git-r3_src_unpack
+}
+
 all_ruby_prepare() {
-	echo ${WORKDIR}
 	rm -r log files/delete.me || die
 
 	# bug #406605
