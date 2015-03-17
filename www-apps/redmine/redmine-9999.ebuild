@@ -58,6 +58,7 @@ pkg_setup() {
 }
 
 all_ruby_prepare() {
+	echo `pwd`
 	rm -r log files/delete.me || die
 
 	# bug #406605
