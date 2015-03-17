@@ -4,7 +4,7 @@
 
 EAPI=5
 USE_RUBY="ruby19 ruby20"
-inherit eutils depend.apache ruby-ng user git-r3
+inherit eutils depend.apache ruby-ng git-r3 user
 
 DESCRIPTION="Redmine is a flexible project management web application written using Ruby on Rails framework"
 HOMEPAGE="http://www.redmine.org/"
