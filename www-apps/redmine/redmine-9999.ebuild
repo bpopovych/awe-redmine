@@ -58,7 +58,7 @@ pkg_setup() {
 }
 
 all_ruby_prepare() {
-	echo ${FILESDIR}
+	echo ${WORKDIR}
 	rm -r log files/delete.me || die
 
 	# bug #406605
