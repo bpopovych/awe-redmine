@@ -157,6 +157,7 @@ pkg_config() {
 		eerror "Please update it via `eselect ruby`"
 		die
 	fi
+	einfo $RUBY_TARGETS
 	if [[ $RUBY_TARGETS != *$( eselect ruby show | awk 'NR==2' | tr  -d ' '  )* ]]; then
 		eerror "/usr/bin/ruby is currently not included in redmine's ruby targets: ${RUBY_TARGETS}."
 		eerror "Please update it via `eselect ruby`"
