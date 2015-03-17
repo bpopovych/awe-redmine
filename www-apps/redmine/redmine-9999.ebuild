@@ -10,6 +10,7 @@ DESCRIPTION="Redmine is a flexible project management web application written us
 HOMEPAGE="http://www.redmine.org/"
 SRC_URI=""
 EGIT_REPO_URI="git://github.com/redmine/redmine.git"
+EGIT_CHECKOUT_DIR="${WORKDIR}"/all
 
 KEYWORDS="~amd64 ~x86"
 LICENSE="GPL-2"
