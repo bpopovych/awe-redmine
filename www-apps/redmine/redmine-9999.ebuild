@@ -190,7 +190,6 @@ pkg_config() {
 		einfo
 
 		einfo "Generating a session store secret."
-		einfo ${RUBY}
 		${RUBY} -S rake generate_secret_token --trace -v || die
 		einfo "Creating the database structure."
 		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake db:migrate || die
