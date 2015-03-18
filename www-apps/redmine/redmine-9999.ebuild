@@ -20,7 +20,7 @@ IUSE="cvs darcs git imagemagick mercurial mysql passenger postgres sqlite3 subve
 
 DEPEND="
 	>=dev-ruby/rails-4.2.0:4.2
-	dev-ruby/activerecord:2.3[mysql?,postgres?,sqlite3?]
+	dev-ruby/activerecord:4.2[mysql?,postgres?,sqlite3?]
 	imagemagick? ( dev-ruby/rmagick )
 	fastcgi? ( dev-ruby/ruby-fcgi-ng )"
 
