@@ -1,206 +1,167 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2009 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/www-apps/redmine/redmine-2.4.6.ebuild,v 1.2 2014/08/06 00:06:01 mrueg Exp $
+# $Header: $
 
-EAPI=5
-USE_RUBY="ruby19 ruby20 ruby21"
-inherit eutils depend.apache git-r3 ruby-ng user
+EAPI="5"
+USE_RUBY="ruby18 jruby ruby19 ruby20 ruby21"
+
+inherit eutils confutils user git-r3 depend.apache
 
 DESCRIPTION="Redmine is a flexible project management web application written using Ruby on Rails framework"
 HOMEPAGE="http://www.redmine.org/"
 SRC_URI=""
 EGIT_REPO_URI="git://github.com/redmine/redmine.git"
-EGIT_CHECKOUT_DIR="${WORKDIR}"/all
 
-KEYWORDS="~amd64 ~x86"
+
+KEYWORDS=""
 LICENSE="GPL-2"
 SLOT="0"
-# All db-related USEs are ineffective since we depend on rails
-# which depends on activerecord which depends on all ruby's db bindings
-#IUSE="ldap openid imagemagick postgres sqlite mysql fastcgi passenger"
-IUSE="ldap imagemagick fastcgi passenger"
+IUSE="cvs darcs git imagemagick mercurial mysql passenger postgres sqlite3 subversion mongrel fastcgi"
 
-#RDEPEND="$(ruby_implementation_depend jruby '>=' -1.6.7)[ssl]"
+DEPEND="
+	>=dev-ruby/rails-2.3.4:2.3
+	dev-ruby/activerecord:2.3[mysql?,postgres?,sqlite3?]
+	imagemagick? ( dev-ruby/rmagick )
+	fastcgi? ( dev-ruby/ruby-fcgi-ng )"
 
-ruby_add_rdepend "virtual/ruby-ssl
-	virtual/rubygems
-	>=dev-ruby/rails-4.2.0:4.2
-	>=dev-ruby/jquery-rails-2.0.2
-	dev-ruby/i18n:0.6
-	>=dev-ruby/coderay-1.0.9
-	dev-ruby/builder:3
-	dev-ruby/rake
-	ldap? ( >=dev-ruby/ruby-net-ldap-0.3.1 )
-	>=dev-ruby/ruby-openid-2.3.0
-	>=dev-ruby/rack-openid-0.2.1
-	imagemagick? ( >=dev-ruby/rmagick-2 )
-	fastcgi? ( dev-ruby/fcgi )
-	passenger? ( www-apache/passenger )"
-#	ruby_targets_ruby19? (
-#		postgres? ( >=dev-ruby/pg-0.11 )
-#		sqlite3? ( dev-ruby/sqlite3 )
-#		mysql? ( dev-ruby/mysql2:0.3 )
-#	)
-
-#ruby_add_bdepend ">=dev-ruby/rdoc-2.4.2
-#	dev-ruby/yard
-#	test? (
-#		>=dev-ruby/shoulda-3.3.2
-#		>=dev-ruby/mocha-0.13.3
-#		>=dev-ruby/capybara-2.0.0
-#		<dev-ruby/nokogiri-1.6.0
-#	)"
+RDEPEND="${DEPEND}
+	>=dev-ruby/ruby-net-ldap-0.0.4
+	>=dev-ruby/coderay-0.7.6.227
+	cvs? ( >=dev-vcs/cvs-1.12 )
+	darcs? ( dev-vcs/darcs )
+	git? ( dev-vcs/git )
+	mercurial? ( dev-vcs/mercurial )
+	subversion? ( >=dev-vcs/subversion-1.3 )
+	mongrel? (
+			www-servers/mongrel_cluster
+			www-servers/apache[apache2_modules_proxy,apache2_modules_proxy_http,apache2_modules_proxy_balancer]
+		)
+	passenger? (
+			|| (
+				www-apache/passenger
+				www-servers/nginx[nginx_modules_http_passenger]
+			)
+		)
+"
 
 REDMINE_DIR="/var/lib/${PN}"
 
 pkg_setup() {
-	enewgroup redmine
-	enewuser redmine -1 -1 "${REDMINE_DIR}" redmine
-	ruby-ng_pkg_setup
+	confutils_require_any mysql postgres sqlite3
+	if use mongrel ; then
+		enewgroup mongrel
+		enewuser  mongrel -1 -1 "${REDMINE_DIR}" mongrel
+	fi
 }
 
-all_ruby_unpack() {
-	git-r3_src_unpack
+src_prepare() {
+	rm -fr log files/delete.me
+	rm -fr vendor/plugins/coderay-0.7.6.227
+	rm -fr vendor/plugins/ruby-net-ldap-0.0.4
+	echo "CONFIG_PROTECT=\"${REDMINE_DIR}/config\"" > "${T}/50${PN}"
 }
 
-all_ruby_prepare() {
-	rm -r log files/delete.me || die
-
-	# bug #406605
-	rm .gitignore .hgignore .travis.yml || die
-
-	#rm Gemfile config/preinitializer.rb || die
-#	rm Gemfile || die
-
-	echo "CONFIG_PROTECT=\"${EPREFIX}${REDMINE_DIR}/config\"" > "${T}/50${PN}"
-	echo "CONFIG_PROTECT_MASK=\"${EPREFIX}${REDMINE_DIR}/config/locales ${EPREFIX}${REDMINE_DIR}/config/settings.yml\"" >> "${T}/50${PN}"
-
-	# remove ldap staff module if disabled to avoid #413779
-	use ldap || rm app/models/auth_source_ldap.rb || die
-}
-
-all_ruby_install() {
+src_install() {
 	dodoc doc/{CHANGELOG,INSTALL,README_FOR_APP,RUNNING_TESTS,UPGRADING}
-	rm -r doc || die
-	dodoc README.rdoc
-	rm README.rdoc || die
+	rm -fr doc
 
 	keepdir /var/log/${PN}
 	dosym /var/log/${PN}/ "${REDMINE_DIR}/log"
 
 	insinto "${REDMINE_DIR}"
-	doins -r .
+	doins -r . || die
 	keepdir "${REDMINE_DIR}/files"
-	keepdir "${REDMINE_DIR}/public/plugin_assets"
 
-	fowners -R redmine:redmine \
-		"${REDMINE_DIR}/config" \
-		"${REDMINE_DIR}/files" \
-		"${REDMINE_DIR}/public/plugin_assets" \
-		"${REDMINE_DIR}/tmp" \
-		/var/log/${PN}
-
-	fowners redmine:redmine "${REDMINE_DIR}"
-
-	# protect sensitive data, see bug #406605
-	fperms -R go-rwx \
-		"${REDMINE_DIR}/config" \
-		"${REDMINE_DIR}/files" \
-		"${REDMINE_DIR}/tmp" \
-		/var/log/${PN}
-
-	if use passenger; then
+	if use mongrel ; then
 		has_apache
 		insinto "${APACHE_VHOSTS_CONFDIR}"
-		doins "${FILESDIR}/10_redmine_vhost.conf"
-	else
-		newconfd "${FILESDIR}/${PN}.confd" ${PN}
-		newinitd "${FILESDIR}/${PN}-2.initd" ${PN}
+		doins "${FILESDIR}/10_redmine_vhost.conf" || die
+		dodir /etc/mongrel_cluster || die
+		dodir "${REDMINE_DIR}/tmp/pids" || die
+		dosym "${REDMINE_DIR}/config/mongrel_cluster.yml" /etc/mongrel_cluster/redmine.yml || die
+		doinitd /usr/lib/ruby/gems/1.8/gems/mongrel_cluster-1.0.5/resources/mongrel_cluster || die
+		fowners -R mongrel:mongrel \
+			"${REDMINE_DIR}/config/environment.rb" \
+			"${REDMINE_DIR}/files" \
+			"${REDMINE_DIR}/tmp" \
+			/var/log/${PN} || die
+		# for SCM
+		fowners mongrel:mongrel "${REDMINE_DIR}" || die
 	fi
-	doenvd "${T}/50${PN}"
+	doenvd "${T}/50${PN}" || die
 }
 
 pkg_postinst() {
+
 	einfo
-	if [ -e "${EPREFIX}${REDMINE_DIR}/config/initializers/session_store.rb" -o -e "${EPREFIX}${REDMINE_DIR}/config/initializers/secret_token.rb" ]; then
-		elog "Execute the following command to upgrade environment:"
-		elog
-		elog "# emerge --config \"=${CATEGORY}/${PF}\""
-		elog
-		elog "For upgrade instructions take a look at:"
-		elog "http://www.redmine.org/wiki/redmine/RedmineUpgrade"
-	else
-		elog "Execute the following command to initialize environment:"
-		elog
-		elog "# cd ${EPREFIX}${REDMINE_DIR}"
-		elog "# cp config/database.yml.example config/database.yml"
-		elog "# \${EDITOR} config/database.yml"
-		elog "# chown redmine:redmine config/database.yml"
-		elog "# emerge --config \"=${CATEGORY}/${PF}\""
-		elog
-		elog "Installation notes are at official site"
-		elog "http://www.redmine.org/wiki/redmine/RedmineInstall"
-	fi
+	elog "Execute the following command to initlize environment:"
+	elog
+	elog "# cd ${REDMINE_DIR}"
+	elog "# cp config/database.yml.example config/database.yml"
+	elog "# ${EDITOR:-/usr/bin/nano} config/database.yml"
+	elog "# emerge --config =${PF}"
+	elog
+	elog "Execute the following command to upgrade environment:"
+	elog
+	elog "# emerge --config =${PF}"
+	elog
+	elog "Installation notes are at official site"
+	elog "http://www.redmine.org/wiki/redmine/RedmineInstall"
+	elog
+	elog "For upgrade instructions take a look at:"
+	elog "http://www.redmine.org/wiki/redmine/RedmineUpgrade"
 	einfo
 }
 
 pkg_config() {
-	if [ ! -e "${EPREFIX}${REDMINE_DIR}/config/database.yml" ]; then
-		eerror "Copy ${EPREFIX}${REDMINE_DIR}/config/database.yml.example to ${EPREFIX}${REDMINE_DIR}/config/database.yml"
-		eerror "then edit this file in order to configure your database settings for \"production\" environment."
+	if [ ! -e "${REDMINE_DIR}/config/database.yml" ] ; then
+		eerror "Copy ${REDMINE_DIR}/config/database.yml.example to ${REDMINE_DIR}/config/database.yml and edit this file in order to configure your database settings for \"production\" environment."
 		die
 	fi
 
 	local RAILS_ENV=${RAILS_ENV:-production}
-	if [ ! -L /usr/bin/ruby ]; then
-		eerror "/usr/bin/ruby is not a valid symlink to any ruby implementation."
-		eerror "Please update it via `eselect ruby`"
-		die
-	fi
-	if [[ $RUBY_TARGETS != *$( eselect ruby show | awk 'NR==2' | tr  -d ' '  )* ]]; then
-		eerror "/usr/bin/ruby is currently not included in redmine's ruby targets: ${RUBY_TARGETS}."
-		eerror "Please update it via `eselect ruby`"
-		die
-	fi
-	local RUBY=${RUBY:-ruby}
 
-	cd "${EPREFIX}${REDMINE_DIR}" || die
-	if [ -e "${EPREFIX}${REDMINE_DIR}/config/initializers/session_store.rb" ]; then
+	pwd
+	echo ${FILESDIR}
+
+	cd "${REDMINE_DIR}"
+
+	if [ -e "${REDMINE_DIR}/config/initializers/session_store.rb" ] ; then
 		einfo
-		einfo "Generating secret token."
-		einfo
-		rm config/initializers/session_store.rb || die
-		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake generate_secret_token || die
-	fi
-	if [ -e "${EPREFIX}${REDMINE_DIR}/config/initializers/secret_token.rb" ]; then
-		einfo
-		einfo "Upgrading database."
+		einfo "Upgrade database."
 		einfo
 
-		einfo "Migrating database."
-		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake db:migrate || die
-		einfo "Upgrading the plugin migrations."
-		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake redmine:plugins:migrate || die
+		einfo "Migrate database."
+		RAILS_ENV="${RAILS_ENV}" rake db:migrate || die
+		einfo "Upgrade the plugin migrations."
+		#RAILS_ENV="${RAILS_ENV}" rake db:migrate:upgrade_plugin_migrations || die
+		RAILS_ENV="${RAILS_ENV}" rake db:migrate_plugins || die
 		einfo "Clear the cache and the existing sessions."
-		${RUBY} -S rake tmp:cache:clear || die
-		${RUBY} -S rake tmp:sessions:clear || die
+		rake tmp:cache:clear || die
+		rake tmp:sessions:clear || die
 	else
 		einfo
-		einfo "Initializing database."
+		einfo "Initialize database."
 		einfo
 
-		einfo "Generating a session store secret."
-		${RUBY} -S rake generate_secret_token --trace -v || die
-		einfo "Creating the database structure."
-		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake db:migrate || die
-		einfo "Populating database with default configuration data."
-		RAILS_ENV="${RAILS_ENV}" ${RUBY} -S rake redmine:load_default_data || die
-		chown redmine:redmine "${EPREFIX}${REDMINE_DIR}"/log/production.log
+		einfo "Generate a session store secret."
+		rake config/initializers/session_store.rb || die
+		einfo "Create the database structure."
+		RAILS_ENV="${RAILS_ENV}" rake db:migrate || die
+		einfo "Insert default configuration data in database."
+		RAILS_ENV="${RAILS_ENV}" rake redmine:load_default_data || die
+	fi
+	if use mongrel ; then
+		einfo "Configure mongrel rails."
+		mongrel_rails cluster::configure -e production -p 8000 -N 3 -c $REDMINE_DIR --user mongrel --group mongrel
 		einfo
-		einfo "If you use sqlite3, please do not forget to change the ownership of the sqlite files."
+		einfo "You need to edit your /etc/conf.d/apache2 file and"
+	    einfo "add '-D PROXY' to APACHE2_OPTS."
 		einfo
-		einfo "# cd \"${EPREFIX}${REDMINE_DIR}\""
-		einfo "# chown redmine:redmine db/ db/*.sqlite3"
+		einfo "Execute the following command to start Redmine:"
+		einfo "# ${EDITOR:-/usr/bin/nano} /etc/apache2/vhosts.d/10_redmine_vhost.conf"
+		einfo "# /etc/init.d/mongrel_cluster start"
+		einfo "# /etc/init.d/apache2 start"
 		einfo
 	fi
 }
