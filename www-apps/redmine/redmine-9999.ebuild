@@ -70,7 +70,7 @@ all_ruby_prepare() {
 	rm .gitignore .hgignore .travis.yml || die
 
 	#rm Gemfile config/preinitializer.rb || die
-	rm Gemfile || die
+#	rm Gemfile || die
 
 	echo "CONFIG_PROTECT=\"${EPREFIX}${REDMINE_DIR}/config\"" > "${T}/50${PN}"
 	echo "CONFIG_PROTECT_MASK=\"${EPREFIX}${REDMINE_DIR}/config/locales ${EPREFIX}${REDMINE_DIR}/config/settings.yml\"" >> "${T}/50${PN}"
