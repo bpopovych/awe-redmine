@@ -19,7 +19,7 @@ SLOT="0"
 IUSE="cvs darcs git imagemagick mercurial mysql passenger postgres sqlite3 subversion mongrel fastcgi"
 
 DEPEND="
-	>=dev-ruby/rails-2.3.4:2.3
+	>=dev-ruby/rails-4.2.0:4.2
 	dev-ruby/activerecord:2.3[mysql?,postgres?,sqlite3?]
 	imagemagick? ( dev-ruby/rmagick )
 	fastcgi? ( dev-ruby/ruby-fcgi-ng )"
